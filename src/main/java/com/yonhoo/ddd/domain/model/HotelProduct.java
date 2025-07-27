@@ -13,7 +13,6 @@ public class HotelProduct {
         return numberOfNights.minOccupationDateRange(checkInDate);
     }
 
-
     public Integer getAdvanceBookingDay() {
         return advanceBookingDay;
     }
