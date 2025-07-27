@@ -23,8 +23,8 @@ public class PriceRuleCalculatorDomainService {
                                                         HotelProduct hotelProduct) {
         DateRange occupationDateRange = hotelProduct.minOccupationDateRange(checkInDay);
         return occupationDateRange.toStream()
-                .map(calculationDay -> hotelProduct.getHotelProducts().stream().map(room ->
-                                priceRule.getPrice(checkInDay, roomPriceData.get(room.getRoomNo()).getPrice()))
+                .map(calculatedDay -> hotelProduct.getHotelProducts().stream().map(room ->
+                                priceRule.getPrice(calculatedDay, roomPriceData.get(room.getRoomNo()).getPrice()))
                         .min(BigDecimal::compareTo)
                         .orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal::add)
