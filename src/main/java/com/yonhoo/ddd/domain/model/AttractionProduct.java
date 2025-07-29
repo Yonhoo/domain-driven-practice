@@ -4,7 +4,6 @@ import java.util.List;
 
 public class AttractionProduct {
     private QuantityRange validQuantityRange;
-    private CustomerChoice customerChoice;
     private List<TicketItem> productItemList;
 
 
@@ -14,14 +13,6 @@ public class AttractionProduct {
 
     public void setValidQuantityRange(QuantityRange validQuantityRange) {
         this.validQuantityRange = validQuantityRange;
-    }
-
-    public CustomerChoice getCustomerChoice() {
-        return customerChoice;
-    }
-
-    public void setCustomerChoice(CustomerChoice customerChoice) {
-        this.customerChoice = customerChoice;
     }
 
     public List<TicketItem> getProductItemList() {
