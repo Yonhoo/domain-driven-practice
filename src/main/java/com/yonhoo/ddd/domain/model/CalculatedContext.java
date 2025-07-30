@@ -13,7 +13,15 @@ public class CalculatedContext {
     private PriceRule priceRule;
     private HotelProduct hotelProduct;
     private CustomerChoice customerChoice;
+    private AttractionProduct attractionProduct;
 
+    public AttractionProduct getAttractionProduct() {
+        return attractionProduct;
+    }
+
+    public void setAttractionProduct(AttractionProduct attractionProduct) {
+        this.attractionProduct = attractionProduct;
+    }
 
     public CustomerChoice getCustomerChoice() {
         return customerChoice;
@@ -31,7 +39,7 @@ public class CalculatedContext {
         this.checkInDay = checkInDay;
     }
 
-    public Map<String, PriceDataV2> getRoomPriceData() {
+    public Map<String, PriceDataV2> getPriceData() {
         return roomPriceData;
     }
 

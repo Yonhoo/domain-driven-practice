@@ -5,7 +5,7 @@ import com.yonhoo.ddd.domain.model.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
@@ -27,6 +27,26 @@ public class PriceRuleCalculatorDomainService {
                 .orElseThrow(() -> new RuntimeException("price is not available"));
     }
 
+    public static BigDecimal calculateAttractionItemDiscountedUnitPrice(CalculatedContext calculatedContext) {
+
+        AttractionProduct attractionProduct = calculatedContext.getAttractionProduct();
+
+        PriceRule priceRule = calculatedContext.getPriceRule();
+
+        Map<String, PriceDataV2> priceData = calculatedContext.getPriceData();
+
+        Integer minQuantity = attractionProduct.getMinQuantity();
+
+        LocalDate calculatedDay = calculatedContext.getCheckInDay();
+
+        return attractionProduct.getProductItemList().stream()
+                .map(attraction ->
+                        BigDecimal.valueOf(minQuantity)
+                                .multiply(priceRule.getPrice(calculatedDay, priceData.get(attraction.getTicketCode()).getPrice())))
+                .min(BigDecimal::compareTo)
+                .orElseThrow(() -> new RuntimeException("price is not available"));
+    }
+
     public static BigDecimal calculateItemDiscountedUnitPriceV2(LocalDate checkInDay,
                                                                 Map<String, PriceDataV2> roomPriceData,
                                                                 PriceRule priceRule,
@@ -42,6 +62,22 @@ public class PriceRuleCalculatorDomainService {
     }
 
 
+    public static BigDecimal calculateHybridItemDiscountedUnitPriceV3(CalculatedContext calculatedContext) {
+        HotelProduct hotelProduct = calculatedContext.getHotelProduct();
+
+        LocalDate checkInDay = calculatedContext.getCheckInDay();
+
+        PriceRule priceRule = calculatedContext.getPriceRule();
+
+        Map<String, PriceDataV2> roomPriceData = calculatedContext.getPriceData();
+
+        DateRange occupationDateRange = hotelProduct.minOccupationDateRange(checkInDay);
+
+        return BigDecimal.ONE;
+
+    }
+
+
     public static BigDecimal calculateItemDiscountedUnitPriceV3(CalculatedContext calculatedContext) {
 
         HotelProduct hotelProduct = calculatedContext.getHotelProduct();
@@ -50,7 +86,7 @@ public class PriceRuleCalculatorDomainService {
 
         PriceRule priceRule = calculatedContext.getPriceRule();
 
-        Map<String, PriceDataV2> roomPriceData = calculatedContext.getRoomPriceData();
+        Map<String, PriceDataV2> roomPriceData = calculatedContext.getPriceData();
 
         DateRange occupationDateRange = hotelProduct.minOccupationDateRange(checkInDay);
 
