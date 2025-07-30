@@ -1,7 +1,6 @@
 package com.yonhoo.ddd.application;
 
 
-
 import com.yonhoo.ddd.domain.model.*;
 import com.yonhoo.ddd.repository.*;
 
@@ -52,7 +51,30 @@ public class ApplicationService {
 
         Map<String, PriceData> roomPriceDataMap = priceDataRepository.queryPriceDataByRoomList(roomNoList);
 
-        return hotelOffer.getMinPriceByCheckInDay(checkInDay, roomPriceDataMap);
+        return hotelOffer.getMinPriceV1(checkInDay, roomPriceDataMap);
+    }
+
+    public BigDecimal calculateMinPriceV3(String offerNo, LocalDate checkInDay) {
+
+        HotelOffer hotelOffer = hotelOfferRepository.queryHotelOfferByOfferNo(offerNo);
+
+        List<String> roomNoList = hotelOffer.getRoomNoList();
+
+        Map<String, PriceDataV2> roomPriceDataMap = priceDataRepository.queryPriceDataV2ByRoomList(roomNoList);
+
+        return hotelOffer.getMinPriceV1(checkInDay, roomPriceDataMap);
+    }
+
+
+    public BigDecimal calculateMinPriceV4(String offerNo, LocalDate checkInDay) {
+
+        HotelOfferV2 hotelOffer = hotelOfferRepository.queryHotelOfferV2ByOfferNo(offerNo);
+
+        List<String> roomNoList = hotelOffer.getRoomNoList();
+
+        Map<String, PriceDataV2> roomPriceDataMap = priceDataRepository.queryPriceDataV2ByRoomList(roomNoList);
+
+        return hotelOffer.getMinPriceV2(checkInDay, roomPriceDataMap);
     }
 
 

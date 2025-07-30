@@ -1,7 +1,5 @@
 package com.yonhoo.ddd.domain.model;
 
-import com.yonhoo.ddd.domain.service.PriceRuleCalculatorDomainService;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -11,7 +9,6 @@ import java.util.function.BinaryOperator;
 public class HotelOfferV2 {
     String offerNo;
     HotelProduct products;
-
     CustomerChoice customerChoice;
     List<PriceRule> priceRuleList;
     Validity validity;
@@ -24,49 +21,33 @@ public class HotelOfferV2 {
         this.customerChoice = customerChoice;
     }
 
-    public BigDecimal getMinPriceByCheckInDay(LocalDate checkInDay, Map<String, PriceData> roomPriceData) {
-
-        if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
-            throw new RuntimeException("checkInDay is not available");
-        }
-
-        return priceRuleList.stream().map(priceRule ->
-                        PriceRuleCalculatorDomainService.calculateItemDiscountedUnitPrice(checkInDay, roomPriceData, priceRule, products))
-                .min(BigDecimal::compareTo)
-                .orElseThrow(() -> new RuntimeException("price is not available"));
-    }
-
-    public BigDecimal getMinPriceByCheckInDayV2(LocalDate checkInDay, Map<String, PriceDataV2> roomPriceData) {
-
-        if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
-            throw new RuntimeException("checkInDay is not available");
-        }
-
-        return priceRuleList.stream().map(priceRule ->
-                        PriceRuleCalculatorDomainService.calculateItemDiscountedUnitPriceV2(checkInDay, roomPriceData, priceRule, products))
-                .min(BigDecimal::compareTo)
-                .orElseThrow(() -> new RuntimeException("price is not available"));
-    }
-
-    public BigDecimal getMinPriceByCheckInDayV3(LocalDate checkInDay, Map<String, PriceDataV2> roomPriceData) {
-
+    public BigDecimal getMinPriceV2(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
         if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
             throw new RuntimeException("checkInDay is not available");
         }
 
         return priceRuleList.stream().map(priceRule -> {
-                    CalculatedContext calculatedContext = CalculatedContext.builder()
-                            .checkInDay(checkInDay)
-                            .hotelProduct(products)
-                            .customerChoice(customerChoice)
-                            .priceRule(priceRule)
-                            .roomPriceData(roomPriceData)
-                            .build();
-                    return PriceRuleCalculatorDomainService.calculateItemDiscountedUnitPriceV3(calculatedContext);
+
+                    DateRange occupationDateRange = products.minOccupationDateRange(checkInDay);
+                    return occupationDateRange.toStream()
+                            .map(calculatedDay -> products.getHotelProducts().stream().map(room ->
+                                            priceRule.getPrice(calculatedDay, roomPriceData.get(room.getRoomNo()).getMinPriceByDay(calculatedDay)))
+                                    .reduce(getMinimalPriceCalculateMethod(customerChoice))
+                                    .orElse(BigDecimal.ZERO))
+                            .reduce(BigDecimal::add)
+                            .orElseThrow(() -> new RuntimeException("price is not available"));
 
                 })
                 .min(BigDecimal::compareTo)
                 .orElseThrow(() -> new RuntimeException("price is not available"));
+    }
+
+    private BinaryOperator<BigDecimal> getMinimalPriceCalculateMethod(CustomerChoice customerChoice) {
+        if (customerChoice == CustomerChoice.FIXED) {
+            return BigDecimal::add;
+        } else {
+            return BigDecimal::min;
+        }
     }
 
 

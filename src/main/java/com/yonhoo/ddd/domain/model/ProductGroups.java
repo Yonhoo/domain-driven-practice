@@ -3,7 +3,6 @@ package com.yonhoo.ddd.domain.model;
 
 public class ProductGroups {
     private HotelProduct hotelProduct;
-
     private AttractionProduct attractionProduct;
 
     public ProductGroups(HotelProduct hotelProduct, AttractionProduct attractionProduct) {

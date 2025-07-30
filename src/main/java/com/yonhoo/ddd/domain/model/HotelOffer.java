@@ -1,7 +1,6 @@
 package com.yonhoo.ddd.domain.model;
 
 
-import com.yonhoo.ddd.domain.service.PriceRuleCalculatorDomainService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,14 +13,24 @@ public class HotelOffer {
     List<PriceRule> priceRuleList;
     Validity validity;
 
-    public BigDecimal getMinPriceByCheckInDay(LocalDate checkInDay, Map<String, PriceData> roomPriceData) {
 
+    public BigDecimal getMinPriceV1(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
         if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
             throw new RuntimeException("checkInDay is not available");
         }
 
-        return priceRuleList.stream().map(priceRule ->
-                        PriceRuleCalculatorDomainService.calculateItemDiscountedUnitPrice(checkInDay, roomPriceData, priceRule, products))
+        return priceRuleList.stream().map(priceRule -> {
+
+                    DateRange occupationDateRange = products.minOccupationDateRange(checkInDay);
+                    return occupationDateRange.toStream()
+                            .map(calculatedDay -> products.getHotelProducts().stream().map(room ->
+                                            priceRule.getPrice(calculatedDay, roomPriceData.get(room.getRoomNo()).getMinPriceByDay(calculatedDay)))
+                                    .min(BigDecimal::compareTo)
+                                    .orElse(BigDecimal.ZERO))
+                            .reduce(BigDecimal::add)
+                            .orElseThrow(() -> new RuntimeException("price is not available"));
+
+                })
                 .min(BigDecimal::compareTo)
                 .orElseThrow(() -> new RuntimeException("price is not available"));
     }

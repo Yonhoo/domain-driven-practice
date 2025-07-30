@@ -5,9 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-public class PriceDataV2 {
-    private LocalDate date;
-    private BigDecimal price;
+public class PriceDataV2 extends AbstractPriceData {
 
     private String roomNo;
 
@@ -22,22 +20,6 @@ public class PriceDataV2 {
         this.timingPriceList = timingPriceList;
     }
 
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
     public String getRoomNo() {
         return roomNo;
     }
@@ -46,8 +28,11 @@ public class PriceDataV2 {
         this.roomNo = roomNo;
     }
 
-    public BigDecimal getMinPrice() {
-        return timingPriceList.stream().map(TimingPrice::getPrice)
+    @Override
+    public BigDecimal getMinPriceByDay(LocalDate day) {
+        return timingPriceList.stream()
+                .filter(timingPrice -> timingPrice.getDay().isEqual(day))
+                .map(TimingPrice::getPrice)
                 .min(BigDecimal::compareTo)
                 .orElseThrow(() -> new IllegalStateException("price is invalid"));
     }
@@ -55,6 +40,8 @@ public class PriceDataV2 {
     private class TimingPrice {
         private BigDecimal price;
         private LocalTime timing;
+
+        private LocalDate day;
 
         public BigDecimal getPrice() {
             return price;
@@ -70,6 +57,14 @@ public class PriceDataV2 {
 
         public void setTiming(LocalTime timing) {
             this.timing = timing;
+        }
+
+        public LocalDate getDay() {
+            return day;
+        }
+
+        public void setDay(LocalDate day) {
+            this.day = day;
         }
     }
 }
