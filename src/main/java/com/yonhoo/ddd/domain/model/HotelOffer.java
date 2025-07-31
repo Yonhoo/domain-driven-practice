@@ -44,6 +44,29 @@ public class HotelOffer {
     }
 
     /**
+     * 使用适配器的计算方法 - 更纯粹的领域概念
+     * 展示如何进一步增强防腐层
+     */
+    public BigDecimal calculateMinPriceWithAdapter(LocalDate checkInDay, 
+                                                   PriceDataAdapter.RoomPriceQuery priceQuery) {
+        // 使用领域友好的价格查询接口，而不是直接依赖外部数据结构
+        return priceRuleList.stream().map(priceRule -> {
+                    DateRange occupationDateRange = products.minOccupationDateRange(checkInDay);
+                    return occupationDateRange.toStream()
+                            .map(calculatedDay -> products.getHotelProducts().stream()
+                                    .filter(room -> priceQuery.hasDataForRoom(room.getRoomNo()))
+                                    .map(room -> priceRule.getPrice(calculatedDay, 
+                                                    priceQuery.queryRoomMinPrice(room.getRoomNo(), calculatedDay)))
+                                    .min(BigDecimal::compareTo)
+                                    .orElse(BigDecimal.ZERO))
+                            .reduce(BigDecimal::add)
+                            .orElseThrow(() -> new RuntimeException("price is not available"));
+                })
+                .min(BigDecimal::compareTo)
+                .orElseThrow(() -> new RuntimeException("price is not available"));
+    }
+
+    /**
      * 获取房间编号列表（必要的对外接口，用于获取外部数据的key）
      */
     public List<String> getRoomNoList() {
