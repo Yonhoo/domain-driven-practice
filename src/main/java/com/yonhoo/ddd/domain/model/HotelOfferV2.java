@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
+/**
+ * 酒店产品聚合根V2
+ * 支持客户选择策略的版本
+ */
 public class HotelOfferV2 {
     String offerNo;
     HotelProduct products;
@@ -13,21 +17,19 @@ public class HotelOfferV2 {
     List<PriceRule> priceRuleList;
     Validity validity;
 
-    public CustomerChoice getCustomerChoice() {
-        return customerChoice;
+    /**
+     * 验证指定日期是否可以入住（聚合内业务规则）
+     */
+    public boolean isAvailableForCheckIn(LocalDate checkInDay) {
+        return validity.validateCheckInDayIsAvailable(checkInDay);
     }
 
-    public void setCustomerChoice(CustomerChoice customerChoice) {
-        this.customerChoice = customerChoice;
-    }
-
-    public BigDecimal getMinPriceV2(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
-        if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
-            throw new RuntimeException("checkInDay is not available");
-        }
-
+    /**
+     * 计算最低价格（核心业务方法）
+     * 支持客户选择策略，内部逻辑完全封装
+     */
+    public BigDecimal calculateMinPrice(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
         return priceRuleList.stream().map(priceRule -> {
-
                     DateRange occupationDateRange = products.minOccupationDateRange(checkInDay);
                     return occupationDateRange.toStream()
                             .map(calculatedDay -> products.getHotelProducts().stream().map(room ->
@@ -36,12 +38,21 @@ public class HotelOfferV2 {
                                     .orElse(BigDecimal.ZERO))
                             .reduce(BigDecimal::add)
                             .orElseThrow(() -> new RuntimeException("price is not available"));
-
                 })
                 .min(BigDecimal::compareTo)
                 .orElseThrow(() -> new RuntimeException("price is not available"));
     }
 
+    /**
+     * 获取房间编号列表（必要的对外接口）
+     */
+    public List<String> getRoomNoList() {
+        return products.hotelProducts.stream().map(RoomInfo::getRoomNo).toList();
+    }
+
+    /**
+     * 根据客户选择确定价格计算方法（内部策略）
+     */
     private BinaryOperator<BigDecimal> getMinimalPriceCalculateMethod(CustomerChoice customerChoice) {
         if (customerChoice == CustomerChoice.FIXED) {
             return BigDecimal::add;
@@ -50,11 +61,21 @@ public class HotelOfferV2 {
         }
     }
 
-
-    public List<String> getRoomNoList() {
-        return products.hotelProducts.stream().map(RoomInfo::getRoomNo).toList();
+    // === 保持原有方法的向后兼容（标记为遗留代码）===
+    @Deprecated
+    public BigDecimal getMinPriceV2(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
+        // 建议使用 calculateMinPrice() 方法
+        return calculateMinPrice(checkInDay, roomPriceData);
     }
 
+    // === 基础的 Getters and Setters ===
+    public CustomerChoice getCustomerChoice() {
+        return customerChoice;
+    }
+
+    public void setCustomerChoice(CustomerChoice customerChoice) {
+        this.customerChoice = customerChoice;
+    }
 
     public String getOfferNo() {
         return offerNo;
@@ -64,24 +85,12 @@ public class HotelOfferV2 {
         this.offerNo = offerNo;
     }
 
-    public HotelProduct getProducts() {
-        return products;
-    }
-
     public void setProducts(HotelProduct products) {
         this.products = products;
     }
 
-    public List<PriceRule> getPriceRuleList() {
-        return priceRuleList;
-    }
-
     public void setPriceRuleList(List<PriceRule> priceRuleList) {
         this.priceRuleList = priceRuleList;
-    }
-
-    public Validity getValidity() {
-        return validity;
     }
 
     public void setValidity(Validity validity) {

@@ -11,4 +11,6 @@ public interface PriceDataRepository {
     Map<String, PriceData> queryPriceDataByRoomList(List<String> roomList);
 
     Map<String, PriceDataV2> queryPriceDataV2ByRoomList(List<String> roomList);
+
+    Map<String, PriceDataV2> queryPriceDataV2ByTicketList(List<String> roomList);
 }
