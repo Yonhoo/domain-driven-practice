@@ -15,12 +15,54 @@ public class HotelOffer {
     HotelProduct products;
     List<PriceRule> priceRuleList;
     Validity validity;
+    List<Channel> channels;
+    List<UserLevel> supportedUserLevels;  // 支持的会员等级
+    List<Region> supportedRegions;        // 支持的区域
 
     /**
      * 验证指定日期是否可以入住（聚合内业务规则）
      */
     public boolean isAvailableForCheckIn(LocalDate checkInDay) {
         return validity.validateCheckInDayIsAvailable(checkInDay);
+    }
+
+    /**
+     * 验证用户上下文是否符合该优惠的限制条件
+     */
+    public boolean isEligibleForUser(UserContext userContext) {
+        return isEligibleForUserLevel(userContext.getUserLevel()) &&
+               isEligibleForRegion(userContext.getRegion()) &&
+               isEligibleForChannel(userContext.getChannel());
+    }
+
+    /**
+     * 验证会员等级是否符合要求
+     */
+    public boolean isEligibleForUserLevel(UserLevel userLevel) {
+        if (supportedUserLevels == null || supportedUserLevels.isEmpty()) {
+            return true; // 如果没有限制，则所有等级都可以
+        }
+        return supportedUserLevels.contains(userLevel);
+    }
+
+    /**
+     * 验证区域是否符合要求
+     */
+    public boolean isEligibleForRegion(Region region) {
+        if (supportedRegions == null || supportedRegions.isEmpty()) {
+            return true; // 如果没有限制，则所有区域都可以
+        }
+        return supportedRegions.contains(region);
+    }
+
+    /**
+     * 验证渠道是否符合要求
+     */
+    public boolean isEligibleForChannel(Channel channel) {
+        if (channels == null || channels.isEmpty()) {
+            return true; // 如果没有限制，则所有渠道都可以
+        }
+        return channels.contains(channel);
     }
 
     /**
@@ -80,6 +122,14 @@ public class HotelOffer {
         return calculateMinPrice(checkInDay, roomPriceData);
     }
 
+    public List<Channel> getChannels() {
+        return channels;
+    }
+
+    public void setChannels(List<Channel> channels) {
+        this.channels = channels;
+    }
+
     // === 基础的 Getters and Setters（只暴露必要的）===
     public String getOfferNo() {
         return offerNo;
@@ -99,5 +149,21 @@ public class HotelOffer {
 
     public void setValidity(Validity validity) {
         this.validity = validity;
+    }
+
+    public List<UserLevel> getSupportedUserLevels() {
+        return supportedUserLevels;
+    }
+
+    public void setSupportedUserLevels(List<UserLevel> supportedUserLevels) {
+        this.supportedUserLevels = supportedUserLevels;
+    }
+
+    public List<Region> getSupportedRegions() {
+        return supportedRegions;
+    }
+
+    public void setSupportedRegions(List<Region> supportedRegions) {
+        this.supportedRegions = supportedRegions;
     }
 }

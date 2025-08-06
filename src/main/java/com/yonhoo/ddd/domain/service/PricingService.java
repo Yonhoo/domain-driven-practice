@@ -36,34 +36,34 @@ package com.yonhoo.ddd.domain.service;
 *
 *
 * */
-public class PricingService {
-
-    private PriceAdapter priceAdapter;     // ACL 层
-    private InventoryAdapter inventoryAdapter; // ACL 层
-
-    public OfferPricingResult computeOfferDetails(HotelOffer offer, LocalDateTime time) {
-        // 1. 获取外部价格和库存
-        Map<RoomType, Price> priceMap = priceAdapter.getPrices(offer.getProducts(), time);
-        Map<RoomType, Boolean> inventoryMap = inventoryAdapter.checkAvailability(offer.getProducts(), time);
-
-        // 2. 应用规则、筛选可用产品
-        List<RoomType> availableRooms = offer.getProducts().stream()
-                .filter(room -> inventoryMap.getOrDefault(room, false))
-                .collect(Collectors.toList());
-
-        // 3. 根据 customer choice 筛选组合
-        List<RoomType> chosenRooms = CustomerChoiceStrategy.select(offer.getCustomerChoice(), availableRooms);
-
-        // 4. 应用价格规则
-        BigDecimal minPrice = offer.getPriceRuleList().stream()
-                .map(rule -> rule.apply(chosenRooms, priceMap))
-                .min(Comparator.naturalOrder())
-                .orElseThrow(() -> new RuntimeException("No applicable price"));
-
-        return new OfferPricingResult(true, minPrice);
-    }
-
-
-
-
-}
+//public class PricingService {
+//
+//    private PriceAdapter priceAdapter;     // ACL 层
+//    private InventoryAdapter inventoryAdapter; // ACL 层
+//
+//    public OfferPricingResult computeOfferDetails(HotelOffer offer, LocalDateTime time) {
+//        // 1. 获取外部价格和库存
+//        Map<RoomType, Price> priceMap = priceAdapter.getPrices(offer.getProducts(), time);
+//        Map<RoomType, Boolean> inventoryMap = inventoryAdapter.checkAvailability(offer.getProducts(), time);
+//
+//        // 2. 应用规则、筛选可用产品
+//        List<RoomType> availableRooms = offer.getProducts().stream()
+//                .filter(room -> inventoryMap.getOrDefault(room, false))
+//                .collect(Collectors.toList());
+//
+//        // 3. 根据 customer choice 筛选组合
+//        List<RoomType> chosenRooms = CustomerChoiceStrategy.select(offer.getCustomerChoice(), availableRooms);
+//
+//        // 4. 应用价格规则
+//        BigDecimal minPrice = offer.getPriceRuleList().stream()
+//                .map(rule -> rule.apply(chosenRooms, priceMap))
+//                .min(Comparator.naturalOrder())
+//                .orElseThrow(() -> new RuntimeException("No applicable price"));
+//
+//        return new OfferPricingResult(true, minPrice);
+//    }
+//
+//
+//
+//
+//}

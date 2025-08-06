@@ -52,15 +52,3 @@ public class UserContext {
         return userId.hashCode();
     }
 }
-
-enum UserLevel {
-    BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
-}
-
-enum Region {
-    NORTH_CHINA, SOUTH_CHINA, EAST_CHINA, WEST_CHINA, INTERNATIONAL
-}
-
-enum Channel {
-    OFFICIAL_WEBSITE, MOBILE_APP, THIRD_PARTY_OTA, OFFLINE_STORE, CORPORATE
-} 

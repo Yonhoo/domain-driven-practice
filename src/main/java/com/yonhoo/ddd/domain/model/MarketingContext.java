@@ -34,30 +34,4 @@ public class MarketingContext {
     public String getSourceSystem() {
         return sourceSystem;
     }
-}
-
-enum StrategyType {
-    HOLIDAY_PRICING, FLASH_SALE, SEASONAL_PRICING, COMBINED
-}
-
-enum PricingType {
-    STANDARD, HOLIDAY, FLASH_SALE, SEASONAL, USER_DISCOUNT
-}
-
-enum PriorityLevel {
-    LOW(1), MEDIUM(2), HIGH(3), URGENT(4);
-    
-    private final int level;
-    
-    PriorityLevel(int level) {
-        this.level = level;
-    }
-    
-    public int getLevel() {
-        return level;
-    }
-    
-    public boolean isHigherThan(PriorityLevel other) {
-        return this.level > other.level;
-    }
 } 
