@@ -1,11 +1,13 @@
 package com.yonhoo.ddd.application;
 
 import com.yonhoo.ddd.domain.model.*;
+import com.yonhoo.ddd.domain.service.ComprehensivePricingDomainService;
 import com.yonhoo.ddd.domain.service.HotelPricingDomainService;
 import com.yonhoo.ddd.repository.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,8 +22,10 @@ public class ApplicationService {
     private ValidityRepository validityRepository;
     private HotelOfferRepository hotelOfferRepository;
     private PriceDataRepository priceDataRepository;
-
-    private HybridOfferRepository hybridOfferRepository;
+    
+    // 新增策略相关的仓储
+    private UserPricingStrategyRepository userPricingStrategyRepository;
+    private MarketingPricingStrategyRepository marketingPricingStrategyRepository;
 
     /**
      * 原始实现 - 应用层直接处理业务逻辑（不推荐）
@@ -47,7 +51,7 @@ public class ApplicationService {
     public BigDecimal calculateMinPriceV2(String offerNo, LocalDate checkInDay) {
         // 1. 获取聚合根
         HotelOffer hotelOffer = hotelOfferRepository.queryHotelOfferByOfferNo(offerNo);
-
+        
         // 2. 获取外部价格数据
         List<String> roomNoList = hotelOffer.getRoomNoList();
         Map<String, PriceData> roomPriceDataMap = priceDataRepository.queryPriceDataByRoomList(roomNoList);
@@ -80,20 +84,97 @@ public class ApplicationService {
         return HotelPricingDomainService.calculateMinPriceV2(hotelOffer, checkInDay, roomPriceDataMap);
     }
 
+    /**
+     * 综合定价服务 - 包含用户策略和营销策略的完整定价流程
+     */
+    public PricingResult calculateComprehensivePrice(
+            String offerNo, 
+            LocalDate checkInDay, 
+            String userId, 
+            UserLevel userLevel, 
+            Region region, 
+            Channel channel, 
+            String sessionId) {
+
+        // 1. 获取酒店产品聚合根
+        HotelOffer hotelOffer = hotelOfferRepository.queryHotelOfferByOfferNo(offerNo);
+        
+        // 2. 获取外部价格数据
+        List<String> roomNoList = hotelOffer.getRoomNoList();
+        Map<String, PriceData> roomPriceDataMap = priceDataRepository.queryPriceDataByRoomList(roomNoList);
+
+        // 3. 构建用户上下文
+        UserContext userContext = new UserContext(userId, userLevel, region, channel, "MEMBER_" + userId);
+
+        // 4. 构建营销上下文
+        MarketingContext marketingContext = new MarketingContext(
+            LocalDateTime.now(), sessionId, 1, "HOTEL_BOOKING_SYSTEM"
+        );
+
+        // 5. 获取适用的用户定价策略
+        List<UserPricingStrategy> userStrategies = 
+            userPricingStrategyRepository.queryApplicableStrategies(userContext);
+
+        // 6. 获取适用的营销定价策略
+        List<MarketingPricingStrategy> marketingStrategies = 
+            marketingPricingStrategyRepository.queryEffectiveStrategies(checkInDay, offerNo);
+
+        // 7. 使用综合定价领域服务计算最终价格
+        return ComprehensivePricingDomainService.calculateFinalPrice(
+            hotelOffer, 
+            checkInDay, 
+            roomPriceDataMap, 
+            userContext, 
+            marketingContext, 
+            userStrategies, 
+            marketingStrategies
+        );
+    }
 
     /**
-     * V5版本 - 处理混合版本的聚合根
+     * 价格趋势分析服务
      */
-    public BigDecimal calculateMinPriceV5(String offerNo, LocalDate checkInDay) {
-        HybridOffer hybridOffer = hybridOfferRepository.queryHybridOfferByOfferNo(offerNo);
-        List<String> roomNoList = hybridOffer.getHotelRoomList();
-        List<String> ticketList = hybridOffer.getAttractionTicketList();
-        Map<String, PriceDataV2> roomPriceDataMap = priceDataRepository.queryPriceDataV2ByRoomList(roomNoList);
-        Map<String, PriceDataV2> ticketPriceDataMap = priceDataRepository.queryPriceDataV2ByRoomList(ticketList);
+    public PriceTrendAnalysis analyzePriceTrend(
+            String offerNo, 
+            LocalDate startDate, 
+            LocalDate endDate, 
+            String userId, 
+            UserLevel userLevel, 
+            Region region, 
+            Channel channel) {
 
-        roomPriceDataMap.putAll(ticketPriceDataMap);
+        // 1. 获取酒店产品聚合根
+        HotelOffer hotelOffer = hotelOfferRepository.queryHotelOfferByOfferNo(offerNo);
 
-        return hybridOffer.getMinPriceV3(checkInDay, roomPriceDataMap);
+        // 2. 构建用户上下文
+        UserContext userContext = new UserContext(userId, userLevel, region, channel, "MEMBER_" + userId);
+
+        // 3. 获取策略数据
+        List<UserPricingStrategy> userStrategies = 
+            userPricingStrategyRepository.queryApplicableStrategies(userContext);
+        
+        List<MarketingPricingStrategy> marketingStrategies = 
+            marketingPricingStrategyRepository.queryStrategiesInDateRange(startDate, endDate, offerNo);
+
+        // 4. 执行趋势分析
+        DateRange analysisRange = DateRange.of(startDate, endDate);
+        return ComprehensivePricingDomainService.analyzePriceTrend(
+            hotelOffer, analysisRange, userContext, userStrategies, marketingStrategies
+        );
+    }
+
+    /**
+     * 快速获取今日最优价格（简化版本）
+     */
+    public BigDecimal getTodayBestPrice(String offerNo, String userId, UserLevel userLevel) {
+        LocalDate today = LocalDate.now();
+        
+        PricingResult result = calculateComprehensivePrice(
+            offerNo, today, userId, userLevel, 
+            Region.EAST_CHINA, Channel.MOBILE_APP, "QUICK_" + System.currentTimeMillis()
+        );
+        
+        return result.getFinalPrice();
     }
 
     // === 遗留方法（逐步迁移） ===
@@ -103,5 +184,14 @@ public class ApplicationService {
 
     public BigDecimal calculatePrice(PriceRule priceRule, List<HotelProduct> hotelProducts, LocalDate checkInDay) {
         return BigDecimal.ONE; // logical processing
+    }
+
+    // === 新增策略仓储的 Setter 方法 ===
+    public void setUserPricingStrategyRepository(UserPricingStrategyRepository userPricingStrategyRepository) {
+        this.userPricingStrategyRepository = userPricingStrategyRepository;
+    }
+
+    public void setMarketingPricingStrategyRepository(MarketingPricingStrategyRepository marketingPricingStrategyRepository) {
+        this.marketingPricingStrategyRepository = marketingPricingStrategyRepository;
     }
 }

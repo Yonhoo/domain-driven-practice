@@ -21,6 +21,13 @@ public class DateRange {
         return new DateRange(arrivingDate, departureDate);
     }
 
+    /**
+     * 检查指定日期是否在范围内
+     */
+    public boolean contains(LocalDate date) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
     public LocalDate getStartDate() {
         return startDate;
     }
