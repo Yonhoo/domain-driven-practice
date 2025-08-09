@@ -39,4 +39,15 @@ public class PriceDataAdapter {
 
         boolean hasDataForRoom(String roomNo);
     }
+
+
+    public interface HybridPriceQuery {
+        BigDecimal queryRoomMinPrice(String roomNo, LocalDate day);
+
+        boolean hasDataForRoom(String roomNo);
+
+        BigDecimal queryTicketMinPrice(String roomNo, LocalDate day);
+
+        boolean hasDataForTicket(String roomNo);
+    }
 } 

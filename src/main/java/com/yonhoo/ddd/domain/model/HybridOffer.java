@@ -26,7 +26,7 @@ public class HybridOffer {
 
     private CustomerChoice customerChoice;
 
-    public BigDecimal getMinPriceV3(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> priceData) {
+    public BigDecimal getMinPriceV3(LocalDate checkInDay, PriceDataAdapter.HybridPriceQuery priceQuery) {
         if (!validity.validateCheckInDayIsAvailable(checkInDay)) {
             throw new RuntimeException("checkInDay is not available");
         }
@@ -36,13 +36,24 @@ public class HybridOffer {
         BigDecimal hotelPrice = priceRuleList.stream().map(priceRule -> {
 
             DateRange occupationDateRange = hotelProduct.minOccupationDateRange(checkInDay);
-            return occupationDateRange.toStream().map(calculatedDay -> hotelProduct.getHotelProducts().stream().map(room -> priceRule.getPrice(calculatedDay, priceData.get(room.getRoomNo()).getMinPriceByDay(calculatedDay))).reduce(getMinimalPriceCalculateMethod(customerChoice)).orElse(BigDecimal.ZERO)).reduce(BigDecimal::add).orElseThrow(() -> new RuntimeException("price is not available"));
+            return occupationDateRange.toStream().map(calculatedDay -> hotelProduct.getHotelProducts()
+                            .stream().map(room -> priceRule.getPrice(calculatedDay, priceQuery.queryRoomMinPrice(room.getRoomNo(), calculatedDay)))
+                            .reduce(getMinimalPriceCalculateMethod(customerChoice))
+                            .orElse(BigDecimal.ZERO))
+                    .reduce(BigDecimal::add)
+                    .orElseThrow(() -> new RuntimeException("price is not available"));
 
         }).min(BigDecimal::compareTo).orElseThrow(() -> new RuntimeException("price is not available"));
 
         AttractionProduct attractionProduct = productGroups.getAttractionProduct();
 
-        BigDecimal attractionPrice = priceRuleList.stream().map(priceRule -> attractionProduct.getProductItemList().stream().map(ticket -> priceRule.getPrice(checkInDay, priceData.get(ticket.getProductNumber()).getMinPriceByDay(checkInDay))).reduce(getMinimalPriceCalculateMethod(customerChoice)).orElse(BigDecimal.valueOf(Integer.MAX_VALUE))).min(BigDecimal::compareTo).orElseThrow(() -> new RuntimeException("price is not available"));
+        BigDecimal attractionPrice = priceRuleList.stream()
+                .map(priceRule -> attractionProduct.getProductItemList()
+                        .stream().map(ticket -> priceRule.getPrice(checkInDay, priceQuery.queryTicketMinPrice(ticket.getProductNumber(), checkInDay)))
+                        .reduce(getMinimalPriceCalculateMethod(customerChoice))
+                        .orElse(BigDecimal.valueOf(Integer.MAX_VALUE)))
+                .min(BigDecimal::compareTo)
+                .orElseThrow(() -> new RuntimeException("price is not available"));
 
         return hotelPrice.add(attractionPrice);
     }
