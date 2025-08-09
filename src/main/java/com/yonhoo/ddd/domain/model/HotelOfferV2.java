@@ -28,12 +28,12 @@ public class HotelOfferV2 {
      * 计算最低价格（核心业务方法）
      * 支持客户选择策略，内部逻辑完全封装
      */
-    public BigDecimal calculateMinPrice(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
+    public BigDecimal calculateMinPrice(LocalDate checkInDay, PriceDataAdapter.RoomPriceQuery priceQuery) {
         return priceRuleList.stream().map(priceRule -> {
                     DateRange occupationDateRange = products.minOccupationDateRange(checkInDay);
                     return occupationDateRange.toStream()
                             .map(calculatedDay -> products.getHotelProducts().stream().map(room ->
-                                            priceRule.getPrice(calculatedDay, roomPriceData.get(room.getRoomNo()).getMinPriceByDay(calculatedDay)))
+                                            priceRule.getPrice(calculatedDay, priceQuery.queryRoomMinPrice(room.getRoomNo(), calculatedDay)))
                                     .reduce(getMinimalPriceCalculateMethod(customerChoice))
                                     .orElse(BigDecimal.ZERO))
                             .reduce(BigDecimal::add)
@@ -59,13 +59,6 @@ public class HotelOfferV2 {
         } else {
             return BigDecimal::min;
         }
-    }
-
-    // === 保持原有方法的向后兼容（标记为遗留代码）===
-    @Deprecated
-    public BigDecimal getMinPriceV2(LocalDate checkInDay, Map<String, ? extends AbstractPriceData> roomPriceData) {
-        // 建议使用 calculateMinPrice() 方法
-        return calculateMinPrice(checkInDay, roomPriceData);
     }
 
     // === 基础的 Getters and Setters ===

@@ -17,10 +17,10 @@ public class HotelPricingDomainService {
      * 计算酒店最低价格 - 标准版本
      * 通过聚合根的业务方法进行协调，不暴露内部细节
      */
-    public static BigDecimal calculateMinPrice(HotelOffer hotelOffer, 
-                                               LocalDate checkInDay, 
+    public static BigDecimal calculateMinPrice(HotelOffer hotelOffer,
+                                               LocalDate checkInDay,
                                                Map<String, ? extends AbstractPriceData> roomPriceData) {
-        
+
         // 1. 聚合根验证自身业务规则
         if (!hotelOffer.isAvailableForCheckIn(checkInDay)) {
             throw new RuntimeException("checkInDay is not available");
@@ -33,15 +33,17 @@ public class HotelPricingDomainService {
     /**
      * 计算酒店最低价格 - V2版本（支持客户选择策略）
      */
-    public static BigDecimal calculateMinPriceV2(HotelOfferV2 hotelOffer, 
-                                                  LocalDate checkInDay, 
-                                                  Map<String, ? extends AbstractPriceData> roomPriceData) {
-        
+    public static BigDecimal calculateMinPriceV2(HotelOfferV2 hotelOffer,
+                                                 LocalDate checkInDay,
+                                                 Map<String, ? extends AbstractPriceData> roomPriceData) {
+
         if (!hotelOffer.isAvailableForCheckIn(checkInDay)) {
             throw new RuntimeException("checkInDay is not available");
         }
 
+        PriceDataAdapter.RoomPriceQuery priceQuery = PriceDataAdapter.adaptToPriceQuery(roomPriceData);
+
         // 委托给聚合根的业务方法
-        return hotelOffer.calculateMinPrice(checkInDay, roomPriceData);
+        return hotelOffer.calculateMinPrice(checkInDay, priceQuery);
     }
 } 

@@ -9,7 +9,7 @@ import java.util.Map;
  * 将外部价格数据转换为聚合根友好的领域概念
  */
 public class PriceDataAdapter {
-    
+
     /**
      * 将外部价格数据适配为聚合根内部使用的价格查询器
      */
@@ -23,19 +23,20 @@ public class PriceDataAdapter {
                 }
                 return priceData.getMinPriceByDay(day);
             }
-            
+
             @Override
             public boolean hasDataForRoom(String roomNo) {
                 return externalPriceData.containsKey(roomNo);
             }
         };
     }
-    
+
     /**
      * 聚合根内部使用的价格查询接口 - 领域概念
      */
     public interface RoomPriceQuery {
         BigDecimal queryRoomMinPrice(String roomNo, LocalDate day);
+
         boolean hasDataForRoom(String roomNo);
     }
 } 
